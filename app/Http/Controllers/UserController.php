@@ -31,28 +31,34 @@ class UserController extends Controller
 
     public function login(Request $request)
     {
+        // Valider les données reçues du client (email et mot de passe)
         $request->validate([
             'email' => 'required|string|email', //|unique:users pour eviter les doublons
             'password' => 'required|string',
         ]);
-        if (!Auth::attempt($request->only('email,password'))) // si l'authentification echoue (email et pswd ne sont pas les memes dans la bd)
+        //  Auth::attempt() retourne true si l'email existe et que le mot de passe correspond (avec bcrypt)
+        // si l'authentification echoue (email et pswd ne sont pas les memes dans la bd)
+        if (!Auth::attempt($request->only('email', 'password')))
+            return response()->json([
+                'message' => 'Email et mot de passe sont incorrects',
+            ], 401); //401 unauthorized
+        // Récupérer l'utilisateur connecté à partir de son email
+        $user = User::where('email', $request->email)->FirstOrFail();
+        // Créer un token API avec Laravel Sanctum pour authentifier les prochaines requêtes
+        $token =  $user->createToken('auth_token')->plainTextToken;
         return response()->json([
-            'message' => 'Email et mot de passe sont incorrects',
-        ], 401); //401 unauthorized
-        $user= User::where('email', $request->email)->FirstOrFail();
-         $token =  $user->createToken('auth_token')->plainTextToken; // creer un token pour l'utilisateur connecte
-         return response()->json([
             'success' => "Utilisateur est connecte avec succes",
             'User' => $user,
             'Token' => $token
         ], 201);
     }
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
+        // Supprime le token actuel utilisé par l'utilisateur
+        // Cela signifie que l'utilisateur est "déconnecté" (il ne pourra plus accéder aux routes protégées)
         $request->user()->currentAccessToken()->delete();
-       return response()->json([
-         'success' => "Logout effectue avec succes",
-
-       ], 201);
-       
+        return response()->json([
+            'success' => "Logout effectue avec succes",
+        ], 201);
     }
 };
