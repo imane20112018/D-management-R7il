@@ -6,29 +6,30 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('transporteurs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('vehicule');
-            $table->string('photo_vehicule');
-            $table->string('permis');
-            $table->string('carte_grise');
+            $table->string('nom');
+            $table->string('email')->unique();
+            $table->string('password');
+
+            $table->enum('type', ['client', 'transporteur'])->default('client');
+
+            // Champs spécifiques au transporteur (optionnels pour un client)
+            $table->string('vehicule', 100)->nullable();
+            $table->string('permis', 100)->nullable();
+            $table->string('photo_vehicule', 255)->nullable();
+            $table->string('carte_grise', 255)->nullable();
             $table->enum('statut_validation', ['en_attente', 'valide', 'refuse'])->default('en_attente');
-            $table->date('date_inscription');
-            $table->date('date_fin_essai');
+            $table->date('date_inscription')->nullable();
+            $table->date('date_fin_essai')->nullable();
             $table->boolean('abonnement_actif')->default(false);
+
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('transporteurs');

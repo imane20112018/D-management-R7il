@@ -40,7 +40,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'transporteur' => [
+            'driver' => 'sanctum',
+            'provider' => 'transporteurs',
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------
@@ -65,11 +71,12 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'transporteurs' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Transporteur::class,
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------
