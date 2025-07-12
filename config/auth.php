@@ -42,7 +42,7 @@ return [
         ],
 
         'transporteur' => [
-            'driver' => 'sanctum',
+            'driver' => 'session',
             'provider' => 'transporteurs',
         ],
     ],
@@ -104,6 +104,14 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        'transporteurs' => [
+            'provider' => 'transporteurs',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
     ],
 
     /*

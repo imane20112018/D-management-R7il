@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Auth\Passwords\CanResetPassword;
 
-class Transporteur extends Authenticatable
+class Transporteur extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable;
-
+use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
     protected $table = 'transporteurs';
 
     protected $fillable = [
@@ -36,5 +38,13 @@ class Transporteur extends Authenticatable
         'abonnement_actif' => 'boolean',
         'date_inscription' => 'date',
         'date_fin_essai' => 'date',
+        'email_verified_at' => 'datetime',
+
     ];
+public function getEmailForVerification()
+{
+    return $this->email;
+}
+
+
 }
