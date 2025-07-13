@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+
+'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID_TRANSPORTEUR'), // par défaut pour éviter erreur
+    'client_secret' => env('GOOGLE_CLIENT_SECRET_TRANSPORTEUR'),
+    'redirect' => env('GOOGLE_REDIRECT_URI_TRANSPORTEUR'),
+],
+
+
 ];

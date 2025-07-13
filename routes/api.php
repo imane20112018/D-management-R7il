@@ -1,27 +1,124 @@
 <?php
 
 use Illuminate\Http\Request;
-use Illuminate\Types\Relations\Role;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClientGoogleController;
+use App\Http\Controllers\TransporteurGoogleController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Models\Transporteur;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
+/*
+|--------------------------------------------------------------------------
+| 🔐 Authentification Admin (User)
+|--------------------------------------------------------------------------
+*/
 
 Route::post('register', [UserController::class, 'register']);
-Route::post('login', [UserController::class, 'login']);
+Route::post('login', [UserController::class, 'login'])->name('login_admin');
 Route::post('logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
 
+/*
+|--------------------------------------------------------------------------
+| 👤 Authentification Transporteur (Vue.js Sanctum)
+|--------------------------------------------------------------------------
+*/
 
-
-//transporteur routes
 Route::prefix('transporteur')->group(function () {
-    Route::middleware('guest')->post('/register', [AuthController::class, 'register']);
-    Route::middleware('guest')->post('/login', [AuthController::class, 'login']);
-    Route::middleware('auth:sanctum')->get('/profil', [AuthController::class, 'user']);
-    Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+
+    // Étape obligatoire pour Sanctum (CSRF cookie)
+    Route::get('/sanctum/csrf-cookie', function () {
+        return response()->json(['message' => 'CSRF cookie set']);
+    });
+
+    // 🔐 Auth publique
+    Route::post('/register_client', [AuthController::class, 'register'])->middleware('guest');
+    Route::post('/login_client', [AuthController::class, 'login']);
+
+    // 🔐 Accès profil après authentification
+    Route::middleware('auth:sanctum')->get('/profil_client', function (Request $request) {
+        return $request->user();
+    });
+
+    // 🔓 Déconnexion
+    Route::middleware('auth:sanctum')->post('/logout_client', [AuthController::class, 'logout']);
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| 🌐 Auth Google (Transporteur & Client)
+|--------------------------------------------------------------------------
+*/
+
+// Transporteur Google Auth
+Route::get('transporteur/redirect', [TransporteurGoogleController::class, 'redirectToGoogle']);
+Route::get('transporteur/callback', [TransporteurGoogleController::class, 'handleGoogleCallback']);
+
+// Client Google Auth
+Route::prefix('client')->group(function () {
+    Route::get('/redirect', [ClientGoogleController::class, 'redirectToGoogle']);
+    Route::get('/callback', [ClientGoogleController::class, 'handleGoogleCallback']);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| ✅ Vérification Email (Transporteur)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/api/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = Transporteur::findOrFail($id);
+
+    if (! hash_equals((string) $hash, sha1($user->email))) {
+        return response()->json(['message' => 'Lien invalide'], 403);
+    }
+
+    if ($user->hasVerifiedEmail()) {
+        return redirect('http://localhost:5173/login_client?verified=1');
+    }
+
+    $user->email_verified_at = now();
+    $user->save();
+
+    return redirect('http://localhost:5173/login_client?verified=1');
+})->name('verification.verify');
+
+
+/*
+|--------------------------------------------------------------------------
+| 🔁 Mot de passe oublié (Forgot Password - Transporteur)
+|--------------------------------------------------------------------------
+*/
+
+// Envoi du lien de réinitialisation (API)
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate(['email' => 'required|email']);
+
+    $user = Transporteur::where('email', $request->email)->first();
+    if (! $user) {
+        return response()->json(['message' => '❌ Aucun transporteur trouvé avec cet email.'], 404);
+    }
+
+    $status = Password::broker('transporteurs')->sendResetLink(
+        $request->only('email')
+    );
+
+    return $status === Password::RESET_LINK_SENT
+        ? response()->json(['message' => '📧 Lien de réinitialisation envoyé.'])
+        : response()->json(['message' => '❌ Erreur lors de l’envoi du lien.'], 400);
+});
+
+// Redirection frontend après clic sur le lien reçu par email
+Route::get('/reset-password/{token}', function ($token, Request $request) {
+    $email = $request->query('email');
+    return redirect()->away("http://localhost:5173/reset_password?token={$token}&email={$email}");
+})->name('password.reset');
+
+// Réception du nouveau mot de passe + validation (API)
+Route::post('/reset-password', [NewPasswordController::class, 'store']);
+
