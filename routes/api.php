@@ -124,4 +124,7 @@ Route::get('/reset-password/{token}', function ($token, Request $request) {
 
 // Réception du nouveau mot de passe + validation (API)
 Route::post('/reset-password', [NewPasswordController::class, 'store']);
+Route::middleware('auth:sanctum')->post('/transporteur/update_profil', [AuthController::class, 'updateProfil']);
+Route::middleware('auth:sanctum')->post('/transporteur/update_status', [AuthController::class, 'updateStatus']);
+
 

@@ -22,11 +22,16 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
         'vehicule',
         'permis',
         'photo_vehicule',
+        'photo_profil',
         'carte_grise',
         'statut_validation',
         'date_inscription',
         'date_fin_essai',
         'abonnement_actif',
+        'email_verified_at',
+        'adresse',
+        'telephone',
+        'status'
     ];
 
     protected $hidden = [
