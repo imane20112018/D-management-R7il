@@ -47,6 +47,9 @@ class ClientGoogleController extends Controller
                     'statut_validation' => 'en_attente',
                     'date_inscription' => now(),
                     'abonnement_actif' => false,
+                'email_verified_at' => now(),
+
+
                 ]
             );
 
