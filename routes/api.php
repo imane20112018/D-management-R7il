@@ -23,7 +23,8 @@ Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logo
 Route::middleware(['auth:sanctum', 'admin'])->get('/admin/dashboard', function () {
     return response()->json(['message' => 'Welcome, Admin']);
 });
-Route::middleware(['auth:sanctum', 'admin'])->get('/admin/clients', [AuthController::class, 'getClients']);
+//Route::middleware(['auth:sanctum', 'admin'])->get('/admin/clients', [AuthController::class, 'getClients']);
+Route::get('/clients', [AuthController::class, 'getClients']);
 
 
 /*
