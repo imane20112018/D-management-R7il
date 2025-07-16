@@ -16,13 +16,14 @@ use App\Models\Transporteur;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/login', [UserController::class, 'login']);
+Route::post('/login', [UserController::class, 'login'])->name('login');
 Route::middleware('auth:sanctum')->get('/me', [UserController::class, 'me']);  //Returns user info using $request->user() and Knowing who's logged in, redirecting by role, etc.
 Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
 
 Route::middleware(['auth:sanctum', 'admin'])->get('/admin/dashboard', function () {
     return response()->json(['message' => 'Welcome, Admin']);
 });
+Route::middleware(['auth:sanctum', 'admin'])->get('/admin/clients', [AuthController::class, 'getClients']);
 
 
 /*
