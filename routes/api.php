@@ -25,6 +25,7 @@ Route::middleware(['auth:sanctum', 'admin'])->get('/admin/dashboard', function (
 });
 //Route::middleware(['auth:sanctum', 'admin'])->get('/admin/clients', [AuthController::class, 'getClients']);
 Route::get('/clients', [AuthController::class, 'getClients']);
+Route::get('/clients/{id}', [AuthController::class, 'show']);
 
 
 /*
