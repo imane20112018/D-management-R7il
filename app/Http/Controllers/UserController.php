@@ -47,15 +47,4 @@ class UserController extends Controller
     {
         return response()->json($request->user());
     }
-    public function getClients()
-    {
-        $clients = User::where('role', 'client')->get();
-        return response()->json($clients);
-    }
-
-    public function getTransporteurs()
-    {
-        $transporteurs = User::where('role', 'transporteur')->get();
-        return response()->json($transporteurs);
-    }
 };
