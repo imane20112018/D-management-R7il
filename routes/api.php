@@ -1,14 +1,15 @@
 <?php
 
+use App\Models\Transporteur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\ClientGoogleController;
-use App\Http\Controllers\TransporteurGoogleController;
+use App\Http\Controllers\API\ReservationController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Models\Transporteur;
+use App\Http\Controllers\TransporteurGoogleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -129,3 +130,23 @@ Route::get('/reset-password/{token}', function ($token, Request $request) {
 Route::post('/reset-password', [NewPasswordController::class, 'store']);
 Route::middleware('auth:sanctum')->post('/transporteur/update_profil', [AuthController::class, 'updateProfil']);
 Route::middleware('auth:sanctum')->post('/transporteur/update_status', [AuthController::class, 'updateStatus']);
+<<<<<<< HEAD
+=======
+
+
+Route::post('/reservations', [ReservationController::class, 'store']);
+
+Route::get('/reservations/client/{id}/exists', [ReservationController::class, 'hasClientReservation']);
+Route::get('/reservations/client/{id}/latest', [ReservationController::class, 'latest']);
+
+Route::middleware('auth:sanctum')->get('/reservations/client/all', [ReservationController::class, 'listByClient']);
+
+Route::middleware('auth:sanctum')->get('/reservations/{id}', [ReservationController::class, 'show']);
+Route::middleware('auth:sanctum')->put('/reservations/{id}', [ReservationController::class, 'update']);
+Route::post('/reservation/client/update', [ReservationController::class, 'updateMyReservation']);
+Route::delete('/reservation/client/destroy/{id}', [ReservationController::class, 'destroy']);
+
+
+
+
+>>>>>>> 316e501 (Ajout de la modification réservation)

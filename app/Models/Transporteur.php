@@ -50,6 +50,17 @@ public function getEmailForVerification()
 {
     return $this->email;
 }
+ public function reservationsClient()
+    {
+        return $this->hasMany(Reservation::class, 'client_id');
+    }
 
+    /**
+     * Réservations acceptées par ce transporteur
+     */
+    public function reservationsTransporteur()
+    {
+        return $this->hasMany(Reservation::class, 'transporteur_id');
+    }
 
 }
