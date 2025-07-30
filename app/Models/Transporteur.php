@@ -31,7 +31,7 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
         'email_verified_at',
         'adresse',
         'telephone',
-        'status'
+        'status',
     ];
 
     protected $hidden = [
@@ -40,7 +40,6 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
     ];
 
     protected $casts = [
-        'abonnement_actif' => 'boolean',
         'date_inscription' => 'date',
         'date_fin_essai' => 'date',
         'email_verified_at' => 'datetime',
@@ -50,6 +49,17 @@ public function getEmailForVerification()
 {
     return $this->email;
 }
+ public function reservationsClient()
+    {
+        return $this->hasMany(Reservation::class, 'client_id');
+    }
 
+    /**
+     * Réservations acceptées par ce transporteur
+     */
+    public function reservationsTransporteur()
+    {
+        return $this->hasMany(Reservation::class, 'transporteur_id');
+    }
 
 }

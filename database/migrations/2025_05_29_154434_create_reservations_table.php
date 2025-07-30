@@ -11,15 +11,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reservations', function (Blueprint $table) {
+      Schema::create('reservations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained('users');
-            $table->foreignId('transporteur_id')->constrained('users');
+
+            // 🔗 Relations
+            $table->foreignId('client_id')->constrained('transporteurs')->onDelete('cascade');
+            $table->foreignId('transporteur_id')->nullable()->constrained('transporteurs')->onDelete('set null');
+
+            // 📍 Informations de lieu
             $table->string('adresse_depart');
+            $table->string('ville_depart')->nullable();
             $table->string('adresse_arrivee');
+            $table->string('ville_arrivee')->nullable();
+
+            // 🏢 Détails logistiques
+            $table->integer('etage')->nullable();
+            $table->boolean('ascenseur')->nullable();
+            $table->float('surface')->nullable();
+            $table->string('type_bien')->nullable(); // Appartement, maison...
+
+            // 🕒 Date et autres infos
             $table->datetime('date_heure');
             $table->text('details')->nullable();
-            $table->enum('statut', ['en_attente', 'acceptee', 'refusee'])->default('en_attente');
+
+            // 📌 Statut
+$table->enum('statut', ['en_attente', 'acceptee', 'terminee'])->default('en_attente');
+
             $table->timestamps();
         });
     }

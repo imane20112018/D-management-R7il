@@ -45,7 +45,7 @@ class TransporteurGoogleController extends Controller
                 'type' => 'transporteur',
                 'statut_validation' => 'en_attente',
                 'date_inscription' => now(),
-                'abonnement_actif' => false,
+                'abonnement_actif' => 'free_14_days',
                 'email_verified_at' => now(),
             ]
         );

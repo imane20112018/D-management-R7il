@@ -1,14 +1,16 @@
 <?php
 
+use App\Models\Transporteur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\ClientGoogleController;
-use App\Http\Controllers\TransporteurGoogleController;
+use App\Http\Controllers\API\ReservationController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Models\Transporteur;
+use App\Http\Controllers\TransporteurGoogleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,17 +18,17 @@ use App\Models\Transporteur;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/login', [UserController::class, 'login'])->name('login');
+Route::post('/login', [UserController::class, 'login']);
 Route::middleware('auth:sanctum')->get('/me', [UserController::class, 'me']);  //Returns user info using $request->user() and Knowing who's logged in, redirecting by role, etc.
 Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
-
 Route::middleware(['auth:sanctum', 'admin'])->get('/admin/dashboard', function () {
     return response()->json(['message' => 'Welcome, Admin']);
 });
+
+=======
 //Route::middleware(['auth:sanctum', 'admin'])->get('/admin/clients', [AuthController::class, 'getClients']);
 Route::get('/clients', [AuthController::class, 'getClients']);
 Route::get('/clients/{id}', [AuthController::class, 'show']);
-
 
 /*
 |--------------------------------------------------------------------------
@@ -130,3 +132,39 @@ Route::get('/reset-password/{token}', function ($token, Request $request) {
 Route::post('/reset-password', [NewPasswordController::class, 'store']);
 Route::middleware('auth:sanctum')->post('/transporteur/update_profil', [AuthController::class, 'updateProfil']);
 Route::middleware('auth:sanctum')->post('/transporteur/update_status', [AuthController::class, 'updateStatus']);
+
+
+Route::post('/reservations', [ReservationController::class, 'store']);
+
+Route::get('/reservations/client/{id}/exists', [ReservationController::class, 'hasClientReservation']);
+Route::get('/reservations/client/{id}/latest', [ReservationController::class, 'latest']);
+
+Route::middleware('auth:sanctum')->get('/reservations/client/all', [ReservationController::class, 'listByClient']);
+
+Route::middleware('auth:sanctum')->get('/reservations/{id}', [ReservationController::class, 'show']);
+Route::middleware('auth:sanctum')->put('/reservations/{id}', [ReservationController::class, 'update']);
+Route::post('/reservation/client/update', [ReservationController::class, 'updateMyReservation']);
+Route::delete('/reservation/client/destroy/{id}', [ReservationController::class, 'destroy']);
+Route::middleware('auth:sanctum')->get('/transporteur/notifications', function (Request $request) {
+    return $request->user()->notifications;
+});
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/reservations-from-notifications', [NotificationController::class, 'getReservationsFromNotifications']);
+});
+
+Route::middleware('auth:sanctum')->delete('/delete/notifications/{id}', [NotificationController::class, 'destroy']);
+
+Route::middleware('auth:sanctum')->get('/transporteur/reservations/historique', [NotificationController::class, 'historiqueReservations']);
+Route::middleware('auth:sanctum')->put('/transporteur/historique/{id}', [NotificationController::class, 'update_statut']);
+
+
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/reservations/{id}', [NotificationController::class, 'show']);
+    Route::put('/reservations/{id}', [NotificationController::class, 'update']);
+});
+

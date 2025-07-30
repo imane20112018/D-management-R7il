@@ -64,61 +64,66 @@ class AuthController extends Controller
         return response()->json(['message' => 'Déconnecté avec succès.']);
     }
 
-    public function updateProfil(Request $request)
-    {
-        $user = $request->user();
+   public function updateProfil(Request $request)
+{
+    $user = $request->user();
 
-        $oldType = $user->type; // ✅ récupère le type actuel dans la base
+    $oldType = $user->type;
 
-        $validated = $request->validate([
-            'nom' => 'required|string|max:255',
-            'email' => 'required|email|unique:transporteurs,email,' . $user->id,
-            'vehicule' => 'nullable|string',
-            'adresse' => 'nullable|string',
-            'telephone' => 'nullable|string',
-            'type' => 'nullable|string|in:client,transporteur,pro',
-            'facebook' => 'nullable|string',
-            'alternative_phone' => 'nullable|string',
-        ]);
+    $validated = $request->validate([
+        'nom' => 'required|string|max:255',
+        'email' => 'required|email|unique:transporteurs,email,' . $user->id,
+        'vehicule' => 'nullable|string',
+        'adresse' => 'nullable|string',
+        'telephone' => 'nullable|string',
+        'type' => 'nullable|string|in:client,transporteur',
+    ]);
 
-        $user->fill($validated);
-
-        // 🔐 Crée le dossier avec nom_id
-        $folderName = strtolower(str_replace(' ', '_', $user->nom . '_' . $user->id));
-        $uploadPath = public_path("transporteurs_images/{$folderName}");
-
-        if (!file_exists($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
+    // Nettoyer les chaînes "null" reçues et les transformer en NULL réel
+    foreach ($validated as $key => $value) {
+        if (is_string($value) && strtolower($value) === 'null') {
+            $validated[$key] = null;
         }
-
-        $handleFile = function ($fieldName, $fileLabel) use ($request, $user, $uploadPath, $folderName) {
-            if ($request->hasFile($fieldName)) {
-                if ($user->$fieldName && file_exists(public_path($user->$fieldName))) {
-                    unlink(public_path($user->$fieldName));
-                }
-
-                $file = $request->file($fieldName);
-                $filename = $fileLabel . '.' . $file->getClientOriginalExtension();
-                $file->move($uploadPath, $filename);
-                $user->$fieldName = "transporteurs_images/{$folderName}/{$filename}";
-            }
-        };
-
-        $handleFile('photo_vehicule', 'photo_vehicule');
-        $handleFile('carte_grise', 'carte_grise');
-        $handleFile('photo_profil', 'photo_profil');
-        $handleFile('permis', 'permis');
-
-        $user->save();
-
-        $typeChanged = $oldType !== $user->type; // ✅ comparaison avec la base
-
-        return response()->json([
-            'message' => '✅ Profil mis à jour avec succès.',
-            'user' => $user,
-            'type_changed' => $typeChanged // ⚠️ envoyé au frontend
-        ]);
     }
+
+    $user->fill($validated);
+
+    // Création dossier
+    $folderName = strtolower(str_replace(' ', '_', $user->nom . '_' . $user->id));
+    $uploadPath = public_path("transporteurs_images/{$folderName}");
+
+    if (!file_exists($uploadPath)) {
+        mkdir($uploadPath, 0755, true);
+    }
+
+    $handleFile = function ($fieldName, $fileLabel) use ($request, $user, $uploadPath, $folderName) {
+        if ($request->hasFile($fieldName)) {
+            if ($user->$fieldName && file_exists(public_path($user->$fieldName))) {
+                unlink(public_path($user->$fieldName));
+            }
+
+            $file = $request->file($fieldName);
+            $filename = $fileLabel . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadPath, $filename);
+            $user->$fieldName = "transporteurs_images/{$folderName}/{$filename}";
+        }
+    };
+
+    $handleFile('photo_vehicule', 'photo_vehicule');
+    $handleFile('carte_grise', 'carte_grise');
+    $handleFile('photo_profil', 'photo_profil');
+    $handleFile('permis', 'permis');
+
+    $user->save();
+
+    $typeChanged = $oldType !== $user->type;
+
+    return response()->json([
+        'message' => '✅ Profil mis à jour avec succès.',
+        'user' => $user,
+        'type_changed' => $typeChanged
+    ]);
+}
 
 
 
