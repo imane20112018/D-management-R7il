@@ -147,6 +147,7 @@ class AuthController extends Controller
     public function getClients()
     {
         $clients = Transporteur::where('type', 'client')->get([
+            'id',
             'nom',
             'email',
             'statut_validation',
@@ -158,5 +159,10 @@ class AuthController extends Controller
         ]);
 
         return response()->json($clients);
+    }
+    public function show($id)
+    {
+        $client = Transporteur::findOrFail($id);
+        return response()->json($client);
     }
 }
