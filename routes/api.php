@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\ClientGoogleController;
 use App\Http\Controllers\API\ReservationController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\TransporteurGoogleController;
 
@@ -140,7 +141,26 @@ Route::middleware('auth:sanctum')->get('/reservations/{id}', [ReservationControl
 Route::middleware('auth:sanctum')->put('/reservations/{id}', [ReservationController::class, 'update']);
 Route::post('/reservation/client/update', [ReservationController::class, 'updateMyReservation']);
 Route::delete('/reservation/client/destroy/{id}', [ReservationController::class, 'destroy']);
+Route::middleware('auth:sanctum')->get('/transporteur/notifications', function (Request $request) {
+    return $request->user()->notifications;
+});
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/reservations-from-notifications', [NotificationController::class, 'getReservationsFromNotifications']);
+});
+
+Route::middleware('auth:sanctum')->delete('/delete/notifications/{id}', [NotificationController::class, 'destroy']);
+
+Route::middleware('auth:sanctum')->get('/transporteur/reservations/historique', [NotificationController::class, 'historiqueReservations']);
+Route::middleware('auth:sanctum')->put('/transporteur/historique/{id}', [NotificationController::class, 'update_statut']);
 
 
-
+Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
+    Route::get('/reservations/{id}', [NotificationController::class, 'show']);
+    Route::put('/reservations/{id}', [NotificationController::class, 'update']);
+});
 

@@ -12,9 +12,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('type');
             $table->morphs('notifiable'); // crée notifiable_id et notifiable_type
-            $table->text('data'); // stocke les données JSON
+            $table->text('data'); // JSON contenant les infos
+            $table->unsignedBigInteger('reservation_id')->nullable()->index(); // Ajout de la colonne reservation_id
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
+
+            // Si tu veux, tu peux ajouter une contrainte étrangère :
+            // $table->foreign('reservation_id')->references('id')->on('reservations')->onDelete('cascade');
         });
     }
 

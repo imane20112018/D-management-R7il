@@ -40,4 +40,9 @@ class Reservation extends Model
     {
         return $this->belongsTo(Transporteur::class, 'transporteur_id');
     }
+
+      public function notifications()
+    {
+        return $this->morphMany(Notification::class, 'notifiable');
+    }
 }

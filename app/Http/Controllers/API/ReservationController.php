@@ -2,9 +2,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\Reservation;
+use App\Models\Notification;
+use App\Models\Transporteur;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Transporteur;
 use App\Notifications\NewReservationNotification;
 
 class ReservationController extends Controller
@@ -14,35 +15,50 @@ class ReservationController extends Controller
     $validated = $request->validate([
         'client_id' => 'required|exists:transporteurs,id',
         'adresse_depart' => 'required|string',
-        'ville_depart' => 'required|nullable|string',
+        'ville_depart' => 'nullable|string',
         'adresse_arrivee' => 'required|string',
-        'ville_arrivee' => 'required|nullable|string',
+        'ville_arrivee' => 'nullable|string',
         'date_heure' => 'required|date',
         'etage' => 'required|integer|min:0',
-        'ascenseur' => 'required|nullable|boolean',
-        'surface' => 'required|nullable|numeric',
-        'type_bien' => 'required|nullable|string',
-        'details' => 'required|nullable|string',
+        'ascenseur' => 'nullable|boolean',
+        'surface' => 'nullable|numeric',
+        'type_bien' => 'nullable|string',
+        'details' => 'nullable|string',
     ]);
 
-    // Statut initial
     $validated['statut'] = 'en_attente';
 
-    // Création de la réservation
     $reservation = Reservation::create($validated);
 
-    // 🔔 Envoi de notification à TOUS les transporteurs
-    $transporteurs = Transporteur::where('status', 'disponible')->where('type', 'transporteur')->get(); // tu peux filtrer si besoin
+    // Récupérer les transporteurs valides (exemple)
+    $transporteurs = Transporteur::where('status', 'disponible')
+        ->where('type', 'transporteur')
+        ->whereNotNull('vehicule')
+        ->whereNotNull('permis')
+        ->whereNotNull('photo_vehicule')
+        ->whereNotNull('carte_grise')
+        ->where('statut_validation', 'valide')
+        ->where('abonnement_actif', 'NOT LIKE', '%en_attente%')
+        ->get();
 
-    foreach ($transporteurs as $transporteur) {
-        $transporteur->notify(new NewReservationNotification($reservation));
+    // Notifier tous les transporteurs valides
+   foreach ($transporteurs as $transporteur) {
+    $transporteur->notify(new NewReservationNotification($reservation));
+
+    // récupérer la dernière notification créée
+    $lastNotification = $transporteur->notifications()->latest()->first();
+
+    if ($lastNotification) {
+        $lastNotification->reservation_id = $reservation->id;
+        $lastNotification->save();
     }
-
+}
     return response()->json([
         'message' => 'Réservation créée avec succès.',
         'reservation' => $reservation,
     ], 201);
 }
+
 
 
  // 📌 Modifier une réservation uniquement si statut = "en_attente"
@@ -179,6 +195,9 @@ public function destroy($id)
         'message' => 'Réservation supprimée.'
     ]);
 }
+
+
+
 
 
 }

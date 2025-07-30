@@ -22,9 +22,9 @@ return new class extends Migration
             $table->string('photo_vehicule', 255)->nullable();
             $table->string('carte_grise', 255)->nullable();
             $table->enum('statut_validation', ['en_attente', 'valide', 'refuse'])->default('en_attente');
+           $table->enum('abonnement_actif', ['en_attente','free_14_days', 'pack_1_month', 'pack_6_months', 'pack_1_year'])->nullable();
             $table->date('date_inscription')->nullable();
             $table->date('date_fin_essai')->nullable();
-            $table->boolean('abonnement_actif')->default(false);
 
             $table->timestamps();
         });

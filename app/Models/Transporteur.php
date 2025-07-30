@@ -31,7 +31,7 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
         'email_verified_at',
         'adresse',
         'telephone',
-        'status'
+        'status',
     ];
 
     protected $hidden = [
@@ -40,7 +40,6 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
     ];
 
     protected $casts = [
-        'abonnement_actif' => 'boolean',
         'date_inscription' => 'date',
         'date_fin_essai' => 'date',
         'email_verified_at' => 'datetime',

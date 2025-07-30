@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\DatabaseMessage;
 
 class NewReservationNotification extends Notification
 {
@@ -32,10 +33,13 @@ class NewReservationNotification extends Notification
      */
     public function toDatabase($notifiable)
     {
-        return [
-            'message' => "Nouvelle réservation créée par {$this->reservation->client->nom}",
-            'reservation_id' => $this->reservation->id,
-            // tu peux ajouter plus d’infos ici si besoin
-        ];
+         return new DatabaseMessage([
+        'reservation_id' => $this->reservation->id,
+        'type' => 'new_reservation',
+        'adresse_depart' => $this->reservation->adresse_depart,
+        'message' => "Nouvelle réservation créée par {$this->reservation->client->nom}",
+        'client_photo' => $this->reservation->client->photo_profil,  // chemin photo client, ex: 'storage/photos/xxx.jpg'
+        // autre infos utiles
+    ]);
     }
 }
