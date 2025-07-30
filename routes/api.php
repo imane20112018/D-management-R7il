@@ -167,3 +167,7 @@ Route::middleware('auth:sanctum')->prefix('transporteur')->group(function () {
     Route::put('/reservations/{id}', [NotificationController::class, 'update']);
 });
 
+Route::get('/client/notifications', function (Request $request) {
+    return $request->user()->notifications;
+})->middleware('auth:sanctum');
+

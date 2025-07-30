@@ -20,7 +20,7 @@ class ReservationAcceptedNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['mail', 'database']; // 🔥 Ajoute 'database' ici
     }
 
     public function toMail($notifiable)
@@ -37,5 +37,18 @@ class ReservationAcceptedNotification extends Notification
             ->line("Téléphone : {$transporteur->telephone}")
             ->line('Le transporteur vous contactera prochainement pour organiser le déménagement.')
             ->line('Merci d’avoir utilisé notre plateforme R7il.');
+    }
+
+    public function toDatabase($notifiable)
+    {
+        $transporteur = $this->reservation->transporteur;
+
+        return [
+            'message' => 'Votre réservation du ' . $this->reservation->adresse_depart . ' à ' . $this->reservation->adresse_arrivee . ' a été acceptée.',
+            'reservation_id' => $this->reservation->id,
+            'transporteur_nom' => $transporteur->nom,
+            'transporteur_email' => $transporteur->email,
+            'transporteur_telephone' => $transporteur->telephone,
+        ];
     }
 }

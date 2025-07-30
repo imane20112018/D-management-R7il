@@ -32,6 +32,7 @@ use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
         'adresse',
         'telephone',
         'status',
+        'adresse_ip'
     ];
 
     protected $hidden = [
