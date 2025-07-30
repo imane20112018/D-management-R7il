@@ -13,7 +13,7 @@ use App\Notifications\ReservationAcceptedByTransporteurNotification;
 
 class NotificationController extends Controller
 {
-   public function index(Request $request)
+    public function index(Request $request)
     {
         return $request->user()->unreadNotifications;
     }
@@ -23,41 +23,41 @@ class NotificationController extends Controller
         $request->user()->unreadNotifications->markAsRead();
         return response()->json(['message' => 'Toutes les notifications ont été marquées comme lues.']);
     }
-public function getReservationsFromNotifications(Request $request)
-{
-    $user = $request->user();
+    public function getReservationsFromNotifications(Request $request)
+    {
+        $user = $request->user();
 
-    // Récupérer les IDs des réservations liées aux notifications
-    $notificationReservationsIds = $user->notifications
-        ->where('type', 'App\Notifications\NewReservationNotification')
-        ->pluck('data.reservation_id')
-        ->unique()
-        ->toArray();
+        // Récupérer les IDs des réservations liées aux notifications
+        $notificationReservationsIds = $user->notifications
+            ->where('type', 'App\Notifications\NewReservationNotification')
+            ->pluck('data.reservation_id')
+            ->unique()
+            ->toArray();
 
-    // Charger les réservations avec la relation client
-    $reservations = Reservation::with('client')
-        ->whereIn('id', $notificationReservationsIds)
-        ->get();
+        // Charger les réservations avec la relation client
+        $reservations = Reservation::with('client')
+            ->whereIn('id', $notificationReservationsIds)
+            ->get();
 
-    return response()->json([
-        'reservations' => $reservations
-    ]);
-}
+        return response()->json([
+            'reservations' => $reservations
+        ]);
+    }
 
-public function show($id)
-{
-    $reservation = Reservation::with('client')->findOrFail($id);
+    public function show($id)
+    {
+        $reservation = Reservation::with('client')->findOrFail($id);
 
-    // Optionnel : sécuriser que le transporteur est bien lié à cette réservation
-    // if ($reservation->transporteur_id !== auth()->id()) {
-    //     return response()->json(['message' => 'Non autorisé'], 403);
-    // }
+        // Optionnel : sécuriser que le transporteur est bien lié à cette réservation
+        // if ($reservation->transporteur_id !== auth()->id()) {
+        //     return response()->json(['message' => 'Non autorisé'], 403);
+        // }
 
-    return response()->json(['reservation' => $reservation]);
-}
+        return response()->json(['reservation' => $reservation]);
+    }
 
 
-  public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $reservation = Reservation::with('client')->findOrFail($id);
 
@@ -107,9 +107,9 @@ public function show($id)
             if ($reservation->client) {
                 $reservation->client->notify(new ReservationAcceptedNotification($reservation));
             }
-if (!$reservation->client) {
-    return response()->json(['message' => 'Client introuvable pour cette réservation.'], 404);
-}
+            if (!$reservation->client) {
+                return response()->json(['message' => 'Client introuvable pour cette réservation.'], 404);
+            }
 
 
 
@@ -146,101 +146,98 @@ if (!$reservation->client) {
         return response()->json(['message' => 'Statut mis à jour avec succès.']);
     }
 
-public function historiqueReservations(Request $request)
-{
-    $transporteur = auth()->user();
+    public function historiqueReservations(Request $request)
+    {
+        $transporteur = auth()->user();
 
-    $reservations = Reservation::with('client')
-        ->where('transporteur_id', $transporteur->id)
-        ->whereIn('statut', ['acceptee', 'terminee', 'annulee'])
-        ->latest()
-        ->get();
-
-    return response()->json(['reservations' => $reservations]);
-}
-public function update_statut(Request $request, $id)
-{
-    $user = auth()->user();
-
-    $request->validate([
-        'statut' => 'required|in:acceptee,terminee,annulee',
-    ]);
-
-    $reservation = Reservation::where('id', $id)
-        ->where('transporteur_id', $user->id)
-        ->firstOrFail();
-
-    // Si la réservation est déjà terminée ou annulée, on bloque la modification
-    if (in_array($reservation->statut, ['terminee', 'annulee'])) {
-        return response()->json([
-            'message' => "Modification impossible : réservation déjà terminée ou annulée."
-        ], 403);
-    }
-
-    $nouveauStatut = $request->input('statut');
-    $reservation->statut = $nouveauStatut;
-
-    // Si annulation, on dissocie le transporteur et on renotifie les transporteurs disponibles valides
-    if ($nouveauStatut === 'annulee') {
-        $reservation->statut = 'en_attente';
-        $reservation->transporteur_id = null;
-        $reservation->save();
-
-        $transporteurs = Transporteur::where('status', 'disponible')
-            ->where('type', 'transporteur')
-            ->whereNotNull('vehicule')
-            ->whereNotNull('permis')
-            ->whereNotNull('photo_vehicule')
-            ->whereNotNull('carte_grise')
-            ->where('statut_validation', 'valide')
-            ->where('abonnement_actif', 'NOT LIKE', '%en_attente%')
+        $reservations = Reservation::with('client')
+            ->where('transporteur_id', $transporteur->id)
+            ->whereIn('statut', ['acceptee', 'terminee', 'annulee'])
+            ->latest()
             ->get();
 
-        foreach ($transporteurs as $transporteur) {
-            $transporteur->notify(new \App\Notifications\NewReservationNotification($reservation));
+        return response()->json(['reservations' => $reservations]);
+    }
+    public function update_statut(Request $request, $id)
+    {
+        $user = auth()->user();
 
-            // Mettre à jour la notification avec l'id de réservation si nécessaire
-            $lastNotification = $transporteur->notifications()->latest()->first();
-            if ($lastNotification) {
-                $lastNotification->reservation_id = $reservation->id;
-                $lastNotification->save();
-            }
+        $request->validate([
+            'statut' => 'required|in:acceptee,terminee,annulee',
+        ]);
+
+        $reservation = Reservation::where('id', $id)
+            ->where('transporteur_id', $user->id)
+            ->firstOrFail();
+
+        // Si la réservation est déjà terminée ou annulée, on bloque la modification
+        if (in_array($reservation->statut, ['terminee', 'annulee'])) {
+            return response()->json([
+                'message' => "Modification impossible : réservation déjà terminée ou annulée."
+            ], 403);
         }
 
-        return response()->json(['message' => 'Statut mis à jour et notifications relancées']);
+        $nouveauStatut = $request->input('statut');
+        $reservation->statut = $nouveauStatut;
+
+        // Si annulation, on dissocie le transporteur et on renotifie les transporteurs disponibles valides
+        if ($nouveauStatut === 'annulee') {
+            $reservation->statut = 'en_attente';
+            $reservation->transporteur_id = null;
+            $reservation->save();
+
+            $transporteurs = Transporteur::where('status', 'disponible')
+                ->where('type', 'transporteur')
+                ->whereNotNull('vehicule')
+                ->whereNotNull('permis')
+                ->whereNotNull('photo_vehicule')
+                ->whereNotNull('carte_grise')
+                ->where('statut_validation', 'valide')
+                ->where('abonnement_actif', 'NOT LIKE', '%en_attente%')
+                ->get();
+
+            foreach ($transporteurs as $transporteur) {
+                $transporteur->notify(new \App\Notifications\NewReservationNotification($reservation));
+
+                // Mettre à jour la notification avec l'id de réservation si nécessaire
+                $lastNotification = $transporteur->notifications()->latest()->first();
+                if ($lastNotification) {
+                    $lastNotification->reservation_id = $reservation->id;
+                    $lastNotification->save();
+                }
+            }
+
+            return response()->json(['message' => 'Statut mis à jour et notifications relancées']);
+        }
+
+        // Sinon on sauvegarde simplement la mise à jour
+        $reservation->save();
+
+        // Si accepté, on notifie le client (optionnel)
+        if ($nouveauStatut === 'acceptee') {
+            $reservation->client->notify(new \App\Notifications\ReservationAcceptedNotification($reservation));
+        }
+
+        return response()->json(['message' => 'Statut mis à jour avec succès']);
     }
 
-    // Sinon on sauvegarde simplement la mise à jour
-    $reservation->save();
+    public function destroy($id, Request $request)
+    {
+        $user = $request->user();
 
-    // Si accepté, on notifie le client (optionnel)
-    if ($nouveauStatut === 'acceptee') {
-        $reservation->client->notify(new \App\Notifications\ReservationAcceptedNotification($reservation));
+        // Récupérer toutes les notifications NewReservationNotification de cet utilisateur
+        $notifications = $user->notifications()
+            ->where('type', 'App\Notifications\NewReservationNotification')
+            ->get()
+            ->filter(function ($notification) use ($id) {
+                return isset($notification->data['reservation_id']) && $notification->data['reservation_id'] == $id;
+            });
+
+        // Supprimer toutes ces notifications correspondantes
+        foreach ($notifications as $notification) {
+            $notification->delete();
+        }
+
+        return response()->json(['message' => 'Notification(s) supprimée(s) avec succès']);
     }
-
-    return response()->json(['message' => 'Statut mis à jour avec succès']);
-}
-
-public function destroy($id, Request $request)
-{
-    $user = $request->user();
-
-    // Récupérer toutes les notifications NewReservationNotification de cet utilisateur
-    $notifications = $user->notifications()
-        ->where('type', 'App\Notifications\NewReservationNotification')
-        ->get()
-        ->filter(function ($notification) use ($id) {
-            return isset($notification->data['reservation_id']) && $notification->data['reservation_id'] == $id;
-        });
-
-    // Supprimer toutes ces notifications correspondantes
-    foreach ($notifications as $notification) {
-        $notification->delete();
-    }
-
-    return response()->json(['message' => 'Notification(s) supprimée(s) avec succès']);
-}
-
-
-
 }

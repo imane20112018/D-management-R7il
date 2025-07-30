@@ -10,26 +10,47 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $request->validate([
-            'nom' => 'required|string|max:255',
-            'email' => 'required|email|unique:transporteurs,email',
-            'password' => 'required|string|min:6|confirmed',
-            'type' => 'required|in:client,transporteur',
-        ]);
+  public function register(Request $request)
+{
+    $request->validate([
+        'nom' => 'required|string|max:255',
+        'email' => 'required|email|unique:transporteurs,email',
+        'password' => 'required|string|min:6|confirmed',
+        'type' => 'required|in:client,transporteur',
+    ]);
 
-        $user = Transporteur::create([
-            'nom' => $request->nom,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'type' => $request->type,
-            'date_inscription' => now(),
-        ]);
-        $user->sendEmailVerificationNotification(); // ✉️ Envoie le mail
+    $ip = $request->ip();
 
-        return response()->json($user, 201);
+    // Vérifie si un compte avec abonnement 'free_14_days' existe déjà avec cette IP
+    $existe = Transporteur::where('adresse_ip', $ip)
+        ->where('abonnement_actif', 'free_14_days')
+        ->exists();
+
+    if ($existe) {
+        return response()->json([
+            'message' => 'Une vérification de sécurité empêche l’activation d’un nouvel essai gratuit. Veuillez contacter l’administrateur si vous pensez qu’il s’agit d’une erreur.'
+        ], 403);
     }
+
+    $user = Transporteur::create([
+        'nom' => $request->nom,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'type' => $request->type,
+        'date_inscription' => now(),
+        'abonnement_actif' => 'free_14_days',
+        'adresse_ip' => $ip,
+        'statut_validation' => 'en_attente',
+        'email_verified_at' => null,  // Pas encore vérifié
+    ]);
+
+    $user->sendEmailVerificationNotification();
+
+    return response()->json([
+        'message' => 'Inscription réussie. Veuillez vérifier votre email pour activer votre compte.',
+        'user' => $user
+    ], 201);
+}
 
     public function login(Request $request)
     {
