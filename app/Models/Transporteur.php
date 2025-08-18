@@ -62,5 +62,14 @@ public function getEmailForVerification()
     {
         return $this->hasMany(Reservation::class, 'transporteur_id');
     }
+    public function isProfileComplete()
+{
+    return $this->vehicule &&
+           $this->permis &&
+           $this->carte_grise &&
+           $this->photo_vehicule &&
+           $this->adresse &&
+           $this->telephone;
+}
 
 }
