@@ -71,5 +71,9 @@ public function getEmailForVerification()
            $this->adresse &&
            $this->telephone;
 }
+public function abonnements()
+{
+    return $this->hasMany(\App\Models\Abonnement::class);
+}
 
 }

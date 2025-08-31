@@ -155,23 +155,8 @@ class AuthController extends Controller
             'user' => $user,
         ]);
     }
-    public function getTransporteursEnAttente()
-{
-    $transporteurs = Transporteur::where('type', 'transporteur')
-        ->where('statut_validation', 'en_attente')
-        ->get([
-            'id',
-            'nom',
-            'email',
-            'date_inscription',
-            'adresse',
-            'telephone',
-            'photo_profil',
-            'status',
-        ]);
 
-    return response()->json($transporteurs);
-}
+
 
 
     public function updateStatus(Request $request)
@@ -212,4 +197,190 @@ class AuthController extends Controller
         $client = Transporteur::findOrFail($id);
         return response()->json($client);
     }
+public function getTransporteursIncomplets()
+{
+    $query = Transporteur::where('type', 'transporteur')
+        ->where(function ($query) {
+            $query->whereNull('nom')
+                  ->orWhereRaw("TRIM(nom) = ''")
+                  ->orWhereNull('email')
+                  ->orWhereRaw("TRIM(email) = ''")
+                  ->orWhereNull('vehicule')
+                  ->orWhereRaw("TRIM(vehicule) = ''")
+                  ->orWhereNull('permis')
+                  ->orWhereRaw("TRIM(permis) = ''")
+                  ->orWhereNull('photo_vehicule')
+                  ->orWhereNull('carte_grise');
+        });
+
+    // ⚡️ Pagination (10 par page)
+    $transporteurs = $query->paginate(10, [
+        'id',
+        'nom',
+        'email',
+        'vehicule',
+        'permis',
+        'photo_vehicule',
+        'carte_grise',
+        'statut_validation',
+        'abonnement_actif',
+        'date_inscription',
+        'date_fin_essai',
+    ]);
+
+    // ➕ Ajouter missing_fields à chaque transporteur
+    $transporteurs->getCollection()->transform(function ($t) {
+        $missing = [];
+        if (!$t->nom || trim($t->nom) === '') $missing[] = 'Nom';
+        if (!$t->email || trim($t->email) === '') $missing[] = 'Email';
+        if (!$t->vehicule || trim($t->vehicule) === '') $missing[] = 'Véhicule';
+        if (!$t->permis || trim($t->permis) === '') $missing[] = 'Permis';
+        if (!$t->photo_vehicule) $missing[] = 'Photo véhicule';
+        if (!$t->carte_grise) $missing[] = 'Carte grise';
+
+        $t->missing_fields = $missing;
+        return $t;
+    });
+
+    return response()->json($transporteurs);
+}
+
+public function deleteTransporteurIncomplet($id)
+{
+    $transporteur = Transporteur::find($id);
+
+    if (!$transporteur) {
+        return response()->json(['message' => '❌ Transporteur introuvable'], 404);
+    }
+
+    $transporteur->delete();
+
+    return response()->json(['message' => '✅ Transporteur supprimé avec succès']);
+}
+public function getTransporteursValides()
+{
+    $transporteurs = Transporteur::where('type', 'transporteur')
+        ->where('statut_validation', 'valide')
+        ->paginate(10, [ // 👈 ajoute paginate avec 10 résultats par page
+            'id',
+            'nom',
+            'email',
+            'telephone',
+            'vehicule',
+            'permis',
+            'photo_profil',
+            'photo_vehicule',
+            'carte_grise',
+            'statut_validation',
+            'abonnement_actif',
+            'date_inscription',
+            'date_fin_essai',
+        ]);
+
+    return response()->json($transporteurs);
+}
+public function getTransporteursEnAttente()
+{
+    $transporteurs = Transporteur::where('type', 'transporteur')
+        ->where('statut_validation', 'en_attente')
+        ->whereNotNull('nom')
+        ->whereRaw("TRIM(nom) != ''")
+        ->whereNotNull('email')
+        ->whereRaw("TRIM(email) != ''")
+        ->whereNotNull('vehicule')
+        ->whereRaw("TRIM(vehicule) != ''")
+        ->whereNotNull('permis')
+        ->whereRaw("TRIM(permis) != ''")
+        ->whereNotNull('photo_vehicule')
+        ->whereNotNull('carte_grise')
+        ->paginate(10, [
+            'id',
+            'nom',
+            'email',
+            'telephone',
+            'photo_profil',
+            'vehicule',
+            'permis',
+            'photo_vehicule',
+            'carte_grise',
+            'statut_validation',
+            'abonnement_actif',
+            'date_inscription',
+            'date_fin_essai',
+        ]);
+
+    return response()->json($transporteurs);
+}
+
+public function me(Request $request)
+{
+    return response()->json($request->user());
+}
+// détails d’un transporteur
+public function showTransporteur($id)
+{
+    return Transporteur::findOrFail($id);
+}
+
+public function updateStatut(Request $request, $id)
+{
+    $request->validate([
+        'statut_validation' => 'required|in:en_attente,valide,refuse'
+    ]);
+
+    $t = Transporteur::findOrFail($id);
+    $t->statut_validation = $request->statut_validation;
+    $t->save();
+
+    return response()->json($t);
+}
+public function getTransporteurById($id)
+{
+    $transporteur = Transporteur::findOrFail($id);
+    return response()->json($transporteur);
+}
+public function validerTransporteur($id)
+{
+    $t = Transporteur::findOrFail($id);
+    $t->statut_validation = 'valide';
+    $t->save();
+
+    return response()->json(['message' => 'Transporteur validé avec succès']);
+}
+
+public function refuserTransporteur($id)
+{
+    $t = Transporteur::findOrFail($id);
+    $t->statut_validation = 'refuse';
+    $t->save();
+
+    return response()->json(['message' => 'Transporteur refusé avec succès']);
+}
+public function refuses(Request $request)
+{
+    // Nombre d'éléments par page (10 par défaut, mais peut être changé via ?per_page=15)
+    $perPage = $request->get('per_page', 10);
+
+    $transporteurs = Transporteur::where('statut_validation', 'refuse')
+        ->orderBy('created_at', 'desc')
+        ->paginate($perPage);
+
+    return response()->json($transporteurs);
+}
+
+public function remettreEnAttente($id)
+{
+    $transporteur = Transporteur::find($id);
+
+    if (!$transporteur) {
+        return response()->json(['message' => 'Transporteur introuvable'], 404);
+    }
+
+    $transporteur->statut_validation = 'en_attente';
+    $transporteur->save();
+
+    return response()->json(['message' => 'Transporteur remis en attente ⏳']);
+}
+
+
 }

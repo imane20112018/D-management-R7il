@@ -87,6 +87,7 @@ public function handleGoogleCallback()
 
         // Générer token
         $token = $transporteur->createToken('authToken')->plainTextToken;
+        
 
         return redirect()->away("http://localhost:5173/google-login-success?token={$token}");
 
